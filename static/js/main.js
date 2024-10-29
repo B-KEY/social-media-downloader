@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function downloadContent() {
+    const statusElement = document.getElementById('status');
     if (isDownloading) {
         showStatus('A download is already in progress', 'info');
         return;
@@ -39,14 +40,24 @@ async function downloadContent() {
         const data = await response.json();
         
         if (data.status === 'success' && data.download_url) {
-            showStatus(`Found: ${data.title}`, 'success');
-            // Create temporary link and click it
+            showStatus(`Downloading: ${data.title}`, 'success');
+            
+            // Create a hidden download link
             const a = document.createElement('a');
+            a.style.display = 'none';
             a.href = data.download_url;
-            a.download = `${data.title}.mp4`;
+            a.download = `${data.title}.${data.ext || 'mp4'}`;
+            
+            // Add to document, click, and remove
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
+            
+            // Small delay before removal
+            setTimeout(() => {
+                document.body.removeChild(a);
+                showStatus(`Download started: ${data.title}`, 'success');
+            }, 1000);
+
         } else {
             showStatus(data.error || 'Download failed', 'error');
         }
@@ -82,12 +93,10 @@ function updateHistoryDisplay() {
 }
 
 function showStatus(message, type = 'info') {
-    const statusContainer = document.getElementById('status-container');
-    if (statusContainer) {
-        statusContainer.textContent = message;
-        statusContainer.className = `status-container ${type}`;
-        statusContainer.style.display = 'block';
-    }
+    const statusElement = document.getElementById('status');
+    statusElement.textContent = message;
+    statusElement.className = `status ${type}`;
+    statusElement.style.display = 'block';
 }
 
 const style = document.createElement('style');
