@@ -34,8 +34,13 @@ def download():
             'quality': quality
         })
         
+        if result.get('status') == 'error':
+            return jsonify(result), 400
+            
         return jsonify(result)
+        
     except Exception as e:
+        print(f"Server error: {str(e)}")  # Debug logging
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

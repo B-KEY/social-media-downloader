@@ -15,7 +15,6 @@ class MediaDownloader:
         return 'best'
 
     def clean_url(self, url):
-        # Remove tracking parameters and clean URL
         parsed = urlparse(url)
         if 'youtube.com' in parsed.netloc or 'youtu.be' in parsed.netloc:
             if 'watch?v=' in url:
@@ -42,14 +41,15 @@ class MediaDownloader:
         try:
             url = self.clean_url(download_info['url'])
             quality = download_info.get('quality', 'best')
+            platform = self.get_platform(url)
             
             ydl_opts = {
                 'format': self.get_format(url, quality),
                 'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
-                'quiet': True,
-                'no_warnings': True,
+                'quiet': False,
+                'no_warnings': False,
                 'noplaylist': True,
-                'extract_flat': True,
+                'extract_flat': False,
                 'force_generic_extractor': False,
                 'ignoreerrors': True,
                 'nocheckcertificate': True,
@@ -64,43 +64,55 @@ class MediaDownloader:
                     'youtube': {
                         'player_client': ['android', 'web'],
                         'player_skip': ['webpage', 'config', 'js']
-                    },
-                    'instagram': {
-                        'compatible_with_web': True
-                    },
-                    'facebook': {
-                        'compatible_with_web': True
-                    },
-                    'tiktok': {
-                        'compatible_with_web': True
                     }
                 }
             }
 
+            if platform == 'instagram':
+                ydl_opts['extract_flat'] = False
+                ydl_opts['force_generic_extractor'] = True
+            elif platform == 'facebook':
+                ydl_opts['extract_flat'] = False
+            elif platform == 'tiktok':
+                ydl_opts['force_generic_extractor'] = True
+
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 try:
-                    info = ydl.extract_info(url, download=True)
-                    if info:
-                        return {
-                            'status': 'success',
-                            'title': info.get('title', 'Unknown'),
-                            'platform': self.get_platform(url)
-                        }
-                    else:
+                    info_dict = ydl.extract_info(url, download=False)
+                    if not info_dict:
                         raise Exception("Could not extract video information")
+                    
+                    info = ydl.extract_info(url, download=True)
+                    if not info:
+                        raise Exception("Download failed")
+                    
+                    return {
+                        'status': 'success',
+                        'title': info.get('title', 'Unknown Title'),
+                        'platform': platform,
+                        'url': url
+                    }
+                    
                 except Exception as e:
-                    # Retry with different options if first attempt fails
+                    print(f"First attempt failed: {str(e)}")
                     ydl_opts['force_generic_extractor'] = True
+                    ydl_opts['extract_flat'] = False
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl2:
                         info = ydl2.extract_info(url, download=True)
+                        if not info:
+                            raise Exception("Both download attempts failed")
                         return {
                             'status': 'success',
-                            'title': info.get('title', 'Unknown'),
-                            'platform': self.get_platform(url)
+                            'title': info.get('title', 'Unknown Title'),
+                            'platform': platform,
+                            'url': url
                         }
                         
         except Exception as e:
+            print(f"Download error: {str(e)}")
             return {
                 'status': 'error',
-                'error': str(e)
+                'error': f"Could not download from {platform}: {str(e)}",
+                'platform': platform,
+                'url': url
             }
