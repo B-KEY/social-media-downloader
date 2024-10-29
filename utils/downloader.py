@@ -1,6 +1,6 @@
 import yt_dlp
 import os
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse
 
 class MediaDownloader:
     def __init__(self):
@@ -19,73 +19,94 @@ class MediaDownloader:
             return 'tiktok'
         return 'unknown'
 
+    def get_download_url(self, info, platform):
+        try:
+            # For YouTube
+            if platform == 'youtube':
+                formats = info.get('formats', [])
+                # Filter for MP4 formats with both video and audio
+                mp4_formats = [f for f in formats if f.get('ext') == 'mp4' and f.get('acodec') != 'none']
+                if mp4_formats:
+                    return max(mp4_formats, key=lambda f: f.get('filesize', 0)).get('url')
+                return formats[-1].get('url')
+
+            # For Instagram
+            elif platform == 'instagram':
+                return info.get('url') or info.get('webpage_url')
+
+            # For Facebook
+            elif platform == 'facebook':
+                if 'formats' in info:
+                    formats = info['formats']
+                    hd_format = next((f for f in formats if f.get('format_id') == 'hd'), None)
+                    if hd_format:
+                        return hd_format.get('url')
+                return info.get('url')
+
+            # For TikTok
+            elif platform == 'tiktok':
+                return info.get('url') or info.get('webpage_url')
+
+            # Default fallback
+            return info.get('url')
+
+        except Exception as e:
+            print(f"Error getting download URL: {str(e)}")
+            return None
+
     def process_download(self, download_info):
         try:
             url = download_info['url']
             platform = self.get_platform(url)
 
+            # Platform-specific options
             ydl_opts = {
-                'format': 'best[ext=mp4]/best',
-                'outtmpl': '%(title)s.%(ext)s',
                 'quiet': True,
                 'no_warnings': True,
-                'noplaylist': True,
                 'extract_flat': True,
                 'skip_download': True,
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate',
-                },
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['web', 'android'],
-                    },
-                    'instagram': {
-                        'compatible_with_web': True,
-                    },
-                    'facebook': {
-                        'compatible_with_web': True,
-                    },
-                    'tiktok': {
-                        'compatible_with_web': True,
-                    }
                 }
             }
 
-            # Platform specific adjustments
-            if platform == 'instagram':
-                ydl_opts['format'] = 'best'
+            # Platform specific configurations
+            if platform == 'youtube':
+                ydl_opts.update({
+                    'format': 'best[ext=mp4]',
+                    'extract_flat': False,
+                    'extractor_args': {'youtube': {'player_client': ['web']}}
+                })
+            elif platform == 'instagram':
+                ydl_opts.update({
+                    'format': 'best',
+                    'extract_flat': False
+                })
             elif platform == 'facebook':
-                ydl_opts['format'] = 'best'
+                ydl_opts.update({
+                    'format': 'best',
+                    'extract_flat': False
+                })
             elif platform == 'tiktok':
-                ydl_opts['format'] = 'best'
+                ydl_opts.update({
+                    'format': 'best',
+                    'extract_flat': False
+                })
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                print(f"Extracting info for {platform}: {url}")
                 info = ydl.extract_info(url, download=False)
                 
                 if not info:
                     raise Exception(f"Could not extract {platform} video information")
 
-                # Get the best format URL
-                if 'formats' in info:
-                    formats = info['formats']
-                    # Prefer MP4 format
-                    mp4_formats = [f for f in formats if f.get('ext') == 'mp4']
-                    if mp4_formats:
-                        best_format = max(mp4_formats, key=lambda f: f.get('filesize', 0))
-                    else:
-                        best_format = formats[-1]  # Last format is usually the best
-                    
-                    download_url = best_format.get('url')
-                else:
-                    download_url = info.get('url')
-
+                # Get download URL based on platform
+                download_url = self.get_download_url(info, platform)
+                
                 if not download_url:
                     raise Exception(f"No download URL found for {platform}")
 
-                # Clean the title for filename
+                # Get clean title
                 title = info.get('title', 'video')
                 title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
 
@@ -96,11 +117,11 @@ class MediaDownloader:
                     'download_url': download_url,
                     'thumbnail': info.get('thumbnail'),
                     'duration': info.get('duration'),
-                    'ext': best_format.get('ext', 'mp4')
+                    'ext': 'mp4'
                 }
 
         except Exception as e:
-            print(f"Download error: {str(e)}")
+            print(f"Download error for {platform}: {str(e)}")
             return {
                 'status': 'error',
                 'error': str(e),
