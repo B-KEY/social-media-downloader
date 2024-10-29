@@ -11,7 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function downloadContent() {
-    console.log('Download function called'); // Debug log
+    if (isDownloading) {
+        showStatus('A download is already in progress', 'info');
+        return;
+    }
 
     const urlInput = document.getElementById('url-input');
     const url = urlInput.value.trim();
@@ -21,15 +24,9 @@ async function downloadContent() {
         return;
     }
 
-    if (isDownloading) {
-        showStatus('A download is already in progress', 'info');
-        return;
-    }
-
     try {
         isDownloading = true;
         showStatus('Processing URL...', 'info');
-        console.log('Sending request for:', url); // Debug log
 
         const response = await fetch('/download', {
             method: 'POST',
@@ -39,32 +36,21 @@ async function downloadContent() {
             body: JSON.stringify({ url })
         });
 
-        console.log('Response received'); // Debug log
-        const data = await response.json();
-        console.log('Response data:', data); // Debug log
-        
-        if (data.status === 'success' && data.download_url) {
-            showStatus(`Starting download: ${data.title}`, 'success');
-            
-            // Create download link
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
-            a.href = data.download_url;
-            a.download = `${data.title}.${data.ext || 'mp4'}`;
-            
-            // Trigger download
+            a.href = downloadUrl;
+            a.download = response.headers.get('content-disposition')?.split('filename=')[1] || 'video.mp4';
             document.body.appendChild(a);
-            console.log('Triggering download'); // Debug log
             a.click();
-            
-            // Cleanup
-            setTimeout(() => {
-                document.body.removeChild(a);
-                showStatus(`Download started for: ${data.title}`, 'success');
-            }, 1000);
-
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+            showStatus('Download completed!', 'success');
         } else {
-            showStatus(data.error || 'Download failed', 'error');
+            const error = await response.json();
+            showStatus(error.error || 'Download failed', 'error');
         }
     } catch (error) {
         console.error('Download error:', error);

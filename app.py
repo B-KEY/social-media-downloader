@@ -17,20 +17,16 @@ def index():
 @app.route('/download', methods=['POST'])
 def download():
     try:
-        print("Download request received")
         data = request.get_json()
         if not data:
-            print("Invalid JSON data")
             return jsonify({'error': 'Invalid JSON data'}), 400
             
         url = data.get('url')
         quality = data.get('quality', 'best')
         
         if not url:
-            print("URL is required")
             return jsonify({'error': 'URL is required'}), 400
 
-        print(f"Processing URL: {url}")
         downloader = get_downloader()
         result = downloader.process_download({
             'id': str(uuid.uuid4()),
@@ -38,11 +34,17 @@ def download():
             'quality': quality
         })
         
-        print(f"Download result: {result}")
-        return jsonify(result)
+        if result.get('status') == 'success' and result.get('file_path'):
+            # Send the file to the client
+            return send_file(
+                result['file_path'],
+                as_attachment=True,
+                download_name=os.path.basename(result['file_path'])
+            )
+            
+        return jsonify(result), 400
         
     except Exception as e:
-        print(f"Server error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
