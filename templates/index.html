@@ -34,7 +34,7 @@
             <div class="download-form">
                 <div class="url-input-container">
                     <i class="fas fa-link input-icon"></i>
-                    <input type="url" id="url-input" placeholder="Paste your URL here...">
+                    <input type="text" id="url-input" placeholder="Enter URL here...">
                 </div>
                 <div class="controls">
                     <select id="quality-select" class="quality-dropdown">
@@ -44,13 +44,13 @@
                         <option value="480p">480p</option>
                         <option value="360p">360p</option>
                     </select>
-                    <button onclick="downloadContent()" class="download-btn">
+                    <button id="download-button" class="download-btn">
                         <i class="fas fa-download"></i> Download
                     </button>
                 </div>
             </div>
 
-            <div id="status-container" class="status-container"></div>
+            <div id="status" class="status" style="display: none;"></div>
         </div>
 
         <div class="card history-section">

@@ -11,11 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function downloadContent() {
-    const statusElement = document.getElementById('status');
-    if (isDownloading) {
-        showStatus('A download is already in progress', 'info');
-        return;
-    }
+    console.log('Download function called'); // Debug log
 
     const urlInput = document.getElementById('url-input');
     const url = urlInput.value.trim();
@@ -25,9 +21,15 @@ async function downloadContent() {
         return;
     }
 
+    if (isDownloading) {
+        showStatus('A download is already in progress', 'info');
+        return;
+    }
+
     try {
         isDownloading = true;
         showStatus('Processing URL...', 'info');
+        console.log('Sending request for:', url); // Debug log
 
         const response = await fetch('/download', {
             method: 'POST',
@@ -37,25 +39,28 @@ async function downloadContent() {
             body: JSON.stringify({ url })
         });
 
+        console.log('Response received'); // Debug log
         const data = await response.json();
+        console.log('Response data:', data); // Debug log
         
         if (data.status === 'success' && data.download_url) {
-            showStatus(`Downloading: ${data.title}`, 'success');
+            showStatus(`Starting download: ${data.title}`, 'success');
             
-            // Create a hidden download link
+            // Create download link
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = data.download_url;
             a.download = `${data.title}.${data.ext || 'mp4'}`;
             
-            // Add to document, click, and remove
+            // Trigger download
             document.body.appendChild(a);
+            console.log('Triggering download'); // Debug log
             a.click();
             
-            // Small delay before removal
+            // Cleanup
             setTimeout(() => {
                 document.body.removeChild(a);
-                showStatus(`Download started: ${data.title}`, 'success');
+                showStatus(`Download started for: ${data.title}`, 'success');
             }, 1000);
 
         } else {
@@ -93,10 +98,15 @@ function updateHistoryDisplay() {
 }
 
 function showStatus(message, type = 'info') {
+    console.log('Status:', message, type); // Debug log
     const statusElement = document.getElementById('status');
-    statusElement.textContent = message;
-    statusElement.className = `status ${type}`;
-    statusElement.style.display = 'block';
+    if (statusElement) {
+        statusElement.textContent = message;
+        statusElement.className = `status ${type}`;
+        statusElement.style.display = 'block';
+    } else {
+        console.error('Status element not found');
+    }
 }
 
 const style = document.createElement('style');
@@ -184,5 +194,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedHistory) {
         downloadHistory = JSON.parse(savedHistory);
         updateHistoryDisplay();
+    }
+});
+
+// Make sure the event listener is added
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded'); // Debug log
+    const downloadButton = document.getElementById('download-button');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', downloadContent);
+        console.log('Download button listener added');
+    } else {
+        console.error('Download button not found');
     }
 });
