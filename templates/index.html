@@ -5,76 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social Media Downloader</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
 </head>
 <body>
+    <div id="particles-js"></div>
     <div class="container">
-        <h1>Social Media Downloader</h1>
-        <div class="download-form">
-            <input type="text" id="url-input" placeholder="Paste your URL here...">
-            <button onclick="downloadContent()" id="download-button">Download</button>
+        <div class="content">
+            <h1>Social Media Downloader</h1>
+            <p>Download videos from YouTube, Instagram, Facebook, and TikTok</p>
+            
+            <div class="download-box">
+                <input type="text" id="url-input" placeholder="Paste your URL here...">
+                <button onclick="downloadContent()" id="download-button">Download</button>
+            </div>
+            
+            <div id="status" class="status" style="display: none;"></div>
+            
+            <div class="supported-platforms">
+                <h3>Supported Platforms</h3>
+                <div class="platform-icons">
+                    <img src="{{ url_for('static', filename='images/youtube.png') }}" alt="YouTube">
+                    <img src="{{ url_for('static', filename='images/instagram.png') }}" alt="Instagram">
+                    <img src="{{ url_for('static', filename='images/facebook.png') }}" alt="Facebook">
+                    <img src="{{ url_for('static', filename='images/tiktok.png') }}" alt="TikTok">
+                </div>
+            </div>
         </div>
-        <div id="status" class="status" style="display: none;"></div>
     </div>
 
-    <!-- Add this before closing body tag -->
-    <script>
-        let isDownloading = false;
-
-        async function downloadContent() {
-            if (isDownloading) {
-                showStatus('A download is already in progress', 'info');
-                return;
-            }
-
-            const urlInput = document.getElementById('url-input');
-            const url = urlInput.value.trim();
-
-            if (!url) {
-                showStatus('Please enter a valid URL', 'error');
-                return;
-            }
-
-            try {
-                isDownloading = true;
-                showStatus('Processing URL...', 'info');
-
-                const response = await fetch('/download', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ url })
-                });
-
-                const data = await response.json();
-                
-                if (data.status === 'success' && data.download_url) {
-                    showStatus(`Starting download: ${data.title}`, 'success');
-                    
-                    // Create a hidden download link
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = data.download_url;
-                    a.download = `${data.title}.${data.ext}`;
-                    
-                    // Add to document and click
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        showStatus(`Download started for: ${data.title}`, 'success');
-                    }, 1000);
-                } else {
-                    showStatus(data.error || 'Download failed', 'error');
-                }
-            } catch (error) {
-                showStatus('An error occurred while processing the URL', 'error');
-            } finally {
-                isDownloading = false;
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="{{ url_for('static', filename='js/particles-config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

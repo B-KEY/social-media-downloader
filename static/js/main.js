@@ -35,7 +35,7 @@ async function downloadContent() {
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = data.download_url;
-            a.download = `${data.title}.${data.ext}`;  // This will trigger download
+            a.download = `${data.title}.${data.ext}`;
             
             // Add to document and click
             document.body.appendChild(a);
@@ -64,3 +64,11 @@ function showStatus(message, type = 'info') {
     statusElement.className = `status ${type}`;
     statusElement.style.display = 'block';
 }
+
+// Add event listener for the download button
+document.addEventListener('DOMContentLoaded', () => {
+    const downloadButton = document.getElementById('download-button');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', downloadContent);
+    }
+});
