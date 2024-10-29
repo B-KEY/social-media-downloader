@@ -10,8 +10,8 @@ class MediaDownloader:
     def get_format(self, url, quality):
         if 'youtube.com' in url or 'youtu.be' in url:
             if quality == 'best':
-                return 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
-            return f'bestvideo[height<={quality[:-1]}][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+                return 'best[ext=mp4]/best'
+            return f'best[height<={quality[:-1]}][ext=mp4]/best'
         return 'best'
 
     def clean_url(self, url):
@@ -41,50 +41,54 @@ class MediaDownloader:
         try:
             url = self.clean_url(download_info['url'])
             quality = download_info.get('quality', 'best')
+            platform = self.get_platform(url)
             
             ydl_opts = {
                 'format': self.get_format(url, quality),
-                'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
                 'noplaylist': True,
+                'extract_flat': True,
+                'skip_download': True,
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate',
                 }
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                try:
-                    info = ydl.extract_info(url, download=True)
-                    if info:
-                        # Get the downloaded file path
-                        if 'requested_downloads' in info:
-                            file_path = info['requested_downloads'][0]['filepath']
-                        else:
-                            file_path = ydl.prepare_filename(info)
-                        
-                        # Read the file and return it
-                        if os.path.exists(file_path):
-                            return {
-                                'status': 'success',
-                                'title': info.get('title', 'Unknown'),
-                                'platform': self.get_platform(url),
-                                'file_path': file_path
-                            }
-                    raise Exception("Download failed")
-                        
-                except Exception as e:
-                    print(f"First attempt failed: {str(e)}")
-                    raise
-                    
+                info = ydl.extract_info(url, download=False)
+                
+                if not info:
+                    raise Exception("Could not extract video information")
+
+                formats = info.get('formats', [])
+                if not formats:
+                    raise Exception("No formats available")
+
+                best_format = None
+                for f in formats:
+                    if f.get('ext') == 'mp4':
+                        if not best_format or f.get('filesize', 0) > best_format.get('filesize', 0):
+                            best_format = f
+
+                if not best_format:
+                    best_format = formats[-1]
+
+                return {
+                    'status': 'success',
+                    'title': info.get('title', 'Unknown Title'),
+                    'platform': platform,
+                    'download_url': best_format.get('url'),
+                    'ext': best_format.get('ext', 'mp4')
+                }
+
         except Exception as e:
             print(f"Download error: {str(e)}")
             return {
                 'status': 'error',
                 'error': str(e),
-                'platform': self.get_platform(url),
+                'platform': platform,
                 'url': url
             }
