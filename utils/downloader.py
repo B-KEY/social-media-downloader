@@ -8,12 +8,10 @@ class MediaDownloader:
         self.download_dir = 'downloads'
         os.makedirs(self.download_dir, exist_ok=True)
         
-        # List of user agents
         self.user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1'
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
         ]
 
     def get_random_user_agent(self):
@@ -26,64 +24,37 @@ class MediaDownloader:
             platform = self.get_platform(url)
 
             ydl_opts = {
-                'format': 'best[ext=mp4]/best',
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                 'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
                 'quiet': False,
                 'no_warnings': False,
                 'noplaylist': True,
                 'nocheckcertificate': True,
                 'prefer_insecure': True,
-                'geo_bypass': True,
-                'geo_bypass_country': 'US',
-                'socket_timeout': 30,
                 'http_headers': {
                     'User-Agent': self.get_random_user_agent(),
-                    'Accept': '*/*',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.5',
                     'Accept-Encoding': 'gzip, deflate',
                     'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1',
                 },
                 'extractor_args': {
                     'youtube': {
-                        'player_client': ['android'],
-                        'player_skip': ['js', 'configs', 'webpage']
+                        'player_client': ['web', 'android'],
+                        'player_skip': ['js', 'configs']
                     }
                 }
             }
 
-            # Add proxy if available
-            proxy = os.getenv('HTTP_PROXY')
-            if proxy:
-                ydl_opts['proxy'] = proxy
-
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 try:
-                    print(f"Attempting download with first configuration: {url}")
+                    print(f"Attempting download: {url}")
+                    # First try to get metadata
                     meta = ydl.extract_info(url, download=False)
                     if not meta:
                         raise Exception("Could not extract video information")
 
-                    # Get available formats
-                    formats = meta.get('formats', [])
-                    if not formats:
-                        raise Exception("No formats available")
-
-                    # Select format
-                    selected_format = None
-                    for f in formats:
-                        if f.get('ext') == 'mp4' and f.get('format_note') != 'tiny':
-                            selected_format = f['format_id']
-                            break
-
-                    if selected_format:
-                        ydl_opts['format'] = selected_format
-
-                    # Actual download
+                    # If metadata extraction successful, try download
                     info = ydl.extract_info(url, download=True)
                     
                     return {
@@ -101,14 +72,9 @@ class MediaDownloader:
                         'format': 'best',
                         'extractor_args': {
                             'youtube': {
-                                'player_client': ['web'],
+                                'player_client': ['android'],
                                 'player_skip': []
                             }
-                        },
-                        'http_headers': {
-                            'User-Agent': self.get_random_user_agent(),
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                            'Accept-Language': 'en-US,en;q=0.5',
                         }
                     })
 
@@ -128,7 +94,7 @@ class MediaDownloader:
             print(f"Download error: {str(e)}")
             return {
                 'status': 'error',
-                'error': f"Could not download from {platform}: {str(e)}",
+                'error': str(e),
                 'platform': platform,
                 'url': url
             }
