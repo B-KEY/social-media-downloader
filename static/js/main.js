@@ -17,9 +17,7 @@ async function downloadContent() {
     }
 
     const urlInput = document.getElementById('url-input');
-    const qualitySelect = document.getElementById('quality-select');
     const url = urlInput.value.trim();
-    const quality = qualitySelect.value;
 
     if (!url) {
         showStatus('Please enter a valid URL', 'error');
@@ -28,34 +26,32 @@ async function downloadContent() {
 
     try {
         isDownloading = true;
-        showStatus('Downloading...', 'info');
+        showStatus('Processing URL...', 'info');
 
         const response = await fetch('/download', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ url, quality })
+            body: JSON.stringify({ url })
         });
 
         const data = await response.json();
         
-        if (data.status === 'success') {
-            const historyItem = {
-                title: data.title,
-                platform: data.platform,
-                quality: quality,
-                timestamp: new Date().toLocaleString()
-            };
-            downloadHistory.unshift(historyItem);
-            updateHistoryDisplay();
-            
-            showStatus(`Successfully downloaded: ${data.title}`, 'success');
-            urlInput.value = '';
+        if (data.status === 'success' && data.download_url) {
+            showStatus(`Found: ${data.title}`, 'success');
+            // Create temporary link and click it
+            const a = document.createElement('a');
+            a.href = data.download_url;
+            a.download = `${data.title}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         } else {
-            showStatus(`Error: ${data.error}`, 'error');
+            showStatus(data.error || 'Download failed', 'error');
         }
     } catch (error) {
+        console.error('Download error:', error);
         showStatus(`Error: ${error.message}`, 'error');
     } finally {
         isDownloading = false;
