@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, jsonify, g
+from flask import Flask, render_template, request, jsonify, g, send_file
 from utils.downloader import MediaDownloader
-import uuid
 import os
+import uuid
 
 app = Flask(__name__)
 
@@ -37,9 +37,6 @@ def download():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-# For Render deployment
-app.wsgi_app = app.wsgi_app
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
