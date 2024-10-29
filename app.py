@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 def get_downloader():
     if 'downloader' not in g:
-        g.downloader = MediaDownloader(download_dir='/tmp/downloads')
+        g.downloader = MediaDownloader()
     return g.downloader
 
 @app.route('/')
@@ -38,7 +38,8 @@ def download():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-app = app.wsgi_app
+# For Render deployment
+app.wsgi_app = app.wsgi_app
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
