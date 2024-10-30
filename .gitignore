@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -24,15 +23,13 @@ var/
 venv/
 ENV/
 
+# Project specific
+downloads/
+.env
+.DS_Store
+
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# Project specific
-downloads/
-.env
-.vercel
-/downloads
-/tmp 

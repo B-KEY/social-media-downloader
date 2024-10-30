@@ -1,40 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social Media Downloader</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
 </head>
 <body>
     <div id="particles-js"></div>
-    <div class="container">
-        <div class="content">
-            <h1>Social Media Downloader</h1>
-            <p>Download videos from YouTube, Instagram, Facebook, and TikTok</p>
-            
-            <div class="download-box">
-                <input type="text" id="url-input" placeholder="Paste your URL here...">
-                <button onclick="downloadContent()" id="download-button">Download</button>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+    </button>
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-download"></i> Social Media Downloader</h1>
+            <p class="subtitle">Download videos from multiple platforms</p>
+        </div>
+
+        <div class="card download-section">
+            <div class="platform-badges">
+                <span class="platform-badge youtube"><i class="fab fa-youtube"></i> YouTube</span>
+                <span class="platform-badge facebook"><i class="fab fa-facebook"></i> Facebook</span>
+                <span class="platform-badge instagram"><i class="fab fa-instagram"></i> Instagram</span>
+                <span class="platform-badge tiktok"><i class="fab fa-tiktok"></i> TikTok</span>
+                <span class="platform-badge twitter"><i class="fab fa-twitter"></i> X (Twitter)</span>
             </div>
-            
-            <div id="status" class="status" style="display: none;"></div>
-            
-            <div class="supported-platforms">
-                <h3>Supported Platforms</h3>
-                <div class="platform-icons">
-                    <img src="{{ url_for('static', filename='images/youtube.png') }}" alt="YouTube">
-                    <img src="{{ url_for('static', filename='images/instagram.png') }}" alt="Instagram">
-                    <img src="{{ url_for('static', filename='images/facebook.png') }}" alt="Facebook">
-                    <img src="{{ url_for('static', filename='images/tiktok.png') }}" alt="TikTok">
+
+            <div class="download-form">
+                <div class="url-input-container">
+                    <i class="fas fa-link input-icon"></i>
+                    <input type="url" id="url-input" placeholder="Paste your URL here...">
+                </div>
+                <div class="controls">
+                    <select id="quality-select" class="quality-dropdown">
+                        <option value="best">Best Quality</option>
+                        <option value="1080p">1080p</option>
+                        <option value="720p">720p</option>
+                        <option value="480p">480p</option>
+                        <option value="360p">360p</option>
+                    </select>
+                    <button class="download-btn">
+                        <i class="fas fa-download"></i> Download
+                    </button>
                 </div>
             </div>
+
+            <div id="status" class="status"></div>
+        </div>
+
+        <div class="card history-section">
+            <h2><i class="fas fa-history"></i> Download History</h2>
+            <div id="history-list" class="history-list"></div>
         </div>
     </div>
-
+    <footer>
+        <p>Made with <i class="fas fa-heart"></i> by B-key</p>
+    </footer>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="{{ url_for('static', filename='js/particles-config.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/particles-config.js') }}"></script>
 </body>
 </html>
